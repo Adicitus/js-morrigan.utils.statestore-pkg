@@ -1,0 +1,29 @@
+{
+  "name": "@adicitus/morrigan.utils.statestore",
+  "version": "0.1.0",
+  "description": "State storage utility to provide local storage for components and providers.",
+  "main": "StateStore.js",
+  "scripts": {
+    "test": "mocha --exit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adicitus/js-morrigan.utils.statestore-pkg.git"
+  },
+  "keywords": [
+    "morrigan",
+    "statestore"
+  ],
+  "author": "Joakim Olsson <joakim.olsson@adicitus.cloud>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Adicitus/js-morrigan.utils.statestore-pkg/issues"
+  },
+  "homepage": "https://github.com/Adicitus/js-morrigan.utils.statestore-pkg#readme",
+  "dependencies": {
+    "lowdb": "^3.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^10.0.0"
+  }
+}
