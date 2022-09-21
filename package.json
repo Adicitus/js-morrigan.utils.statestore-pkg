@@ -1,6 +1,6 @@
 {
   "name": "@adicitus/morrigan.utils.statestore",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "State storage utility to provide local storage for components and providers.",
   "main": "StateStore.js",
   "scripts": {
