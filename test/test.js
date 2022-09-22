@@ -55,7 +55,6 @@ describe('StateStore', () => {
             assert.deepEqual(v, null)
         })
 
-        
         describe("getStore", () => {
             var delegateStore = null
 
@@ -149,6 +148,48 @@ describe('StateStore', () => {
                     let store2 = await delegateStore.getStore('accessTest', 'full')
                     let v2 = await store2.get('value')
                     assert.deepEqual(v1, v2)
+                })
+
+                describe("Datatypes should be retained when data is stored/retrieved.", () => {
+
+                    var store = null
+
+                    before(async () => {
+                        store = await StateStore.getStore('datatypeTests')
+                    })
+
+                    it('Number', async () => {
+                        let v1 = Math.random() * 1000
+                        await store.set('test', v1)
+                        let v2 = await store.get('test')
+                        assert.strictEqual(v1, v2)
+                    })
+
+                    it('Boolean', async () => {
+                        let v1 = false
+                        await store.set('test', v1)
+                        let v2 = await store.get('test')
+                        assert.strictEqual(v1, v2)
+                    })
+
+                    it('String', async () => {
+                        let v1 = Math.random().toString(16).split('.')[1]
+                        await store.set('test', v1)
+                        let v2 = await store.get('test')
+                        assert.strictEqual(v1, v2)
+                    })
+
+                    it('Object', async () => {
+                        let v1 = {
+                            String: Math.random().toString(16).split('.')[1],
+                            Number: Math.random() * 1000,
+                            Boolean: true,
+                            Object: {}
+                        }
+                        await store.set('test', v1)
+                        let v2 = await store.get('test')
+                        assert.deepEqual(v1, v2)
+                    })
                 })
             })
         })

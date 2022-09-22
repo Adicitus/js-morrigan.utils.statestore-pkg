@@ -65,6 +65,7 @@ function StateStore(parentPath, namespace, options) {
     const { Low, JSONFile, Memory } = moduleState.lowdb
     
     const storePath = `${parentPath}/${namespace}`
+    const dbFile = `${storePath}/db.json`
     const state = {
         scope: 'simple'
     }
@@ -77,11 +78,16 @@ function StateStore(parentPath, namespace, options) {
         case mode.persistent:
         default:
             fs.mkdirSync(storePath, { recursive: true })
-            db = new Low(new JSONFile(`${storePath}/db.json`))
+            db = new Low(new JSONFile(dbFile))
             break
     }
     
-    db.read()
+    if(fs.existsSync(dbFile)) {
+        db.read()
+    } else {
+        db.data = {}
+        db.write()
+    }
 
     this.getNamespace = () => {
         return namespace
@@ -105,7 +111,7 @@ function StateStore(parentPath, namespace, options) {
         delete db.data[name]
         await db.write()
     }
-
+    
     if (options) {
         if (options.scope) {
             state.scope = (scopes[options.scope] > scopes[state.scope])? options.scope : state.scope 
