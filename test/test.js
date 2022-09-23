@@ -123,6 +123,7 @@ describe('StateStore', () => {
             describe("Namespace data", () => {
 
                 const accessTestValue = Math.random().toString(16).split('.')[1]
+                const accessRestrictionTestValue = Math.random().toString(16).split('.')[1]
                 const persistTestValue = Math.random().toString(16).split('.')[1]
 
                 it(`Two stores with the same namespace should access the same data. (nonce: ${accessTestValue})`, async () => {
@@ -132,10 +133,28 @@ describe('StateStore', () => {
 
                     await store1.set('value', v1)
                     let v2 = await store2.get('value')
-                    
+
                     assert.equal(store1.getNamespace(), store2.getNamespace())
-                    assert.notEqual(store1.db, store2.db)
+                    if (store1.db !== store2.db) {
+                        assert.fail('Both test storess use the same db instance!')
+                    }
+
                     assert.deepEqual(v1, v2)
+                })
+
+                it(`Two stores with different namespaces should not be able to access the same data. (nonce: ${accessRestrictionTestValue})`, async () => {
+                    let v1 = accessRestrictionTestValue
+                    let store1 = await delegateStore.getStore('accessRestrictionTest1', 'full')
+                    let store2 = await delegateStore.getStore('accessRestrictionTest2', 'full')
+
+                    await store1.set('privateValue', v1)
+                    let v2 = await store2.get('privateValue')
+
+                    if (store1.db === store2.db) {
+                        assert.fail('Both test storess use the same db instance!')
+                    }
+                    assert.notDeepEqual(v1, v2)
+
                 })
 
                 it(`Namespace data should persist if the original store object is deleted. (nonce: ${persistTestValue})`, async () => {

@@ -1,6 +1,6 @@
 {
   "name": "@adicitus/morrigan.utils.statestore",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "State storage utility to provide local storage for components and providers.",
   "main": "StateStore.js",
   "scripts": {
@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/Adicitus/js-morrigan.utils.statestore-pkg#readme",
   "dependencies": {
-    "lowdb": "^3.0.0"
+    "node-localstorage": "^2.2.1"
   },
   "devDependencies": {
     "mocha": "^10.0.0"

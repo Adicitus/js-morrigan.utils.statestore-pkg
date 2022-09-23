@@ -1,5 +1,4 @@
 const fs = require('fs')
-const crypto = require('crypto')
 
 const StateStoreValidationError = require('./StateStoreValidationError')
 
@@ -11,11 +10,6 @@ const scopes = {
     simple: 0,
     delegate: 1,
     full: 2
-}
-
-const mode = {
-    live: 'persistent',
-    memory: 'memory'
 }
 
 const namespaceFormat = /^[a-z0-9-_]+$/i
@@ -36,18 +30,9 @@ module.exports.SCOPE_SIMPLE     = 'simple'
  */
 module.exports.SCOPE_DELEGATE   = 'delegate'
 /**
- * Full scope, allows full access to the underlying lowdb DB object in addition to 'delegate' scope.
+ * Full scope, allows full access to the underlying LocalStorage object in addition to 'delegate' scope.
  */
 module.exports.SCOPE_FULL       = 'full'
-
-/**
- * Overall module state 'persistent'. Indicating that data should be persisted between restarts. 
- */
-module.exports.MODE_LIVE        = 'persistent'
-/**
- * 
- */
-module.exports.MODE_TEST        = 'test'
 
 /**
  * Generates a new state store API object that can be used to persist data.
@@ -62,56 +47,32 @@ function StateStore(parentPath, namespace, options) {
         throw "Uninitialized: Global StateStore settings have not been applied. Please run the exported .setup function to initialize the module."
     }
 
-    const { Low, JSONFile, Memory } = moduleState.lowdb
+    const LocalStorage = moduleState.LocalStorage
     
     const storePath = `${parentPath}/${namespace}`
-    const dbFile = `${storePath}/db.json`
     const state = {
         scope: 'simple'
     }
-    var db = null
-    
-    switch(moduleState.mode) {
-        case mode.memory:
-            db = new Low(new Memory())
-            break
-        case mode.persistent:
-        default:
-            fs.mkdirSync(storePath, { recursive: true })
-            db = new Low(new JSONFile(dbFile))
-            break
-    }
-    
-    if(fs.existsSync(dbFile)) {
-        db.read()
-    } else {
-        db.data = {}
-        db.write()
-    }
+    var db = new LocalStorage(storePath)
 
     this.getNamespace = () => {
         return namespace
     }
 
     this.set = async (name, value) => {
-        if (db.data === null) {
-            await db.read()
-        }
-
-        db.data[name] = value
-        await db.write()
+        let v = JSON.stringify(value)
+        return db.setItem(name, v)
     }
 
     this.get = async (name) => {
-        await db.read()
-        return db.data[name]
+        let v = db.getItem(name)
+        return JSON.parse(v)
     }
 
     this.remove = async (name) => {
-        delete db.data[name]
-        await db.write()
+        return db.removeItem(name)
     }
-    
+
     if (options) {
         if (options.scope) {
             state.scope = (scopes[options.scope] > scopes[state.scope])? options.scope : state.scope 
@@ -180,26 +141,13 @@ function validateModuleState() {
 /**
  * 
  * @param {string} rootPath Filesystem directory under which the stores should be created.
- * @param {object} options Optional settings. Only recognizes 'mode', which can be set to 'persistent' or 'memory':
- *   - live: Persists  
+ * @param {object} options Reserved for future use, does not do anything at this point.
  */
 module.exports.setup = async (rootPath, options) => {
 
-    moduleState.lowdb = await import('lowdb')
+    moduleState.LocalStorage = require('node-localstorage').LocalStorage
 
     moduleState.rootPath = rootPath
-
-    if (options) {
-        switch(options.mode) {
-            case 'memory':
-                moduleState.mode = 'memory'
-                break
-            case 'persistent':
-            default:
-                moduleState.mode = 'persistent'
-                break
-        }
-    }
 
     validateModuleState()
 
