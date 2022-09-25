@@ -122,12 +122,15 @@ describe('StateStore', () => {
 
             describe("Namespace data", () => {
 
-                const accessTestValue = Math.random().toString(16).split('.')[1]
-                const accessRestrictionTestValue = Math.random().toString(16).split('.')[1]
-                const persistTestValue = Math.random().toString(16).split('.')[1]
+                const nonces = []
 
-                it(`Two stores with the same namespace should access the same data. (nonce: ${accessTestValue})`, async () => {
-                    let v1 = accessTestValue
+                for(var i = 0; i < 100; i++) {
+                    nonces.push(Math.random().toString(16).split('.')[1])
+                }
+
+
+                it(`Two stores with the same namespace should access the same data. (nonce: ${nonces[0]})`, async () => {
+                    let v1 = nonces[0]
                     let store1 = await delegateStore.getStore('accessTest', 'full')
                     let store2 = await delegateStore.getStore('accessTest', 'full')
 
@@ -142,10 +145,10 @@ describe('StateStore', () => {
                     assert.deepEqual(v1, v2)
                 })
 
-                it(`Two stores with different namespaces should not be able to access the same data. (nonce: ${accessRestrictionTestValue})`, async () => {
-                    let v1 = accessRestrictionTestValue
-                    let store1 = await delegateStore.getStore('accessRestrictionTest1', 'full')
-                    let store2 = await delegateStore.getStore('accessRestrictionTest2', 'full')
+                it(`Two stores with different namespaces should not be able to access the same data. (nonce: ${nonces[1]})`, async () => {
+                    let v1 = nonces[1]
+                    let store1 = await delegateStore.getStore('accessRestrictionTest1_store1', 'full')
+                    let store2 = await delegateStore.getStore('accessRestrictionTest1_store2', 'full')
 
                     await store1.set('privateValue', v1)
                     let v2 = await store2.get('privateValue')
@@ -157,12 +160,41 @@ describe('StateStore', () => {
 
                 })
 
-                it(`Namespace data should persist if the original store object is deleted. (nonce: ${persistTestValue})`, async () => {
-                    let v1 = persistTestValue
+                it(`Parent stores should not be able to access values in child stores. (nonce: ${nonces[2]})`, async () => {
+                    let v1 = nonces[2]
+                    let store1 = await delegateStore.getStore('accessRestrictionTest2_parent', 'full')
+                    let store2 = await store1.getStore('accessRestrictionTest2_child', 'full')
+
+                    await store1.set('privateValue', v1)
+                    let v2 = await store2.get('privateValue')
+
+                    if (store1.db === store2.db) {
+                        assert.fail('Both test storess use the same db instance!')
+                    }
+                    assert.notDeepEqual(v1, v2)
+
+                })
+
+                it(`Child stores should not be able to access values in parent stores. (nonce: ${nonces[3]})`, async () => {
+                    let v1 = nonces[3]
+                    let store1 = await delegateStore.getStore('accessRestrictionTest3_parent', 'full')
+                    let store2 = await store1.getStore('accessRestrictionTest3_child', 'full')
+
+                    await store2.set('privateValue', v1)
+                    let v2 = await store1.get('privateValue')
+
+                    if (store1.db === store2.db) {
+                        assert.fail('Both test storess use the same db instance!')
+                    }
+                    assert.notDeepEqual(v1, v2)
+
+                })
+
+                it(`Namespace data should persist if the original store object is deleted. (nonce: ${nonces[4]})`, async () => {
+                    let v1 = nonces[4]
                     let store1 = await delegateStore.getStore('accessTest', 'full')
                     await store1.set('value', v1)
                     delete store1
-
                     
                     let store2 = await delegateStore.getStore('accessTest', 'full')
                     let v2 = await store2.get('value')
@@ -193,6 +225,13 @@ describe('StateStore', () => {
 
                     it('String', async () => {
                         let v1 = Math.random().toString(16).split('.')[1]
+                        await store.set('test', v1)
+                        let v2 = await store.get('test')
+                        assert.strictEqual(v1, v2)
+                    })
+
+                    it('Null', async () => {
+                        let v1 = null
                         await store.set('test', v1)
                         let v2 = await store.get('test')
                         assert.strictEqual(v1, v2)
