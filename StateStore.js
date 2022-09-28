@@ -14,26 +14,6 @@ const scopes = {
 
 const namespaceFormat = /^[a-z0-9-_]+$/i
 
-var rootStore = null
-
-/**
- * Regular expression for valid namespace format.
- */
-module.exports.VALID_NAMESPACE_FORMAT = namespaceFormat
-
-/**
- * Simple scope, only allows getting, setting and removing of data in this store.
- */
-module.exports.SCOPE_SIMPLE     = 'simple'
-/**
- * Delegate scope, allows creation of new stores, in addition to what 'limited' scope allows.
- */
-module.exports.SCOPE_DELEGATE   = 'delegate'
-/**
- * Full scope, allows full access to the underlying LocalStorage object in addition to 'delegate' scope.
- */
-module.exports.SCOPE_FULL       = 'full'
-
 /**
  * Generates a new state store API object that can be used to persist data.
  * @param {string} parentPath Path to the folder where the store should be created. 
@@ -53,7 +33,7 @@ function StateStore(parentPath, namespace, options) {
     const state = {
         scope: 'simple'
     }
-    var db = new LocalStorage(storePath)
+    var storage = new LocalStorage(storePath)
 
     this.getNamespace = () => {
         return namespace
@@ -61,16 +41,16 @@ function StateStore(parentPath, namespace, options) {
 
     this.set = async (name, value) => {
         let v = JSON.stringify(value)
-        return db.setItem(name, v)
+        return storage.setItem(name, v)
     }
 
     this.get = async (name) => {
-        let v = db.getItem(name)
+        let v = storage.getItem(name)
         return JSON.parse(v)
     }
 
     this.remove = async (name) => {
-        return db.removeItem(name)
+        return storage.removeItem(name)
     }
 
     if (options) {
@@ -92,7 +72,7 @@ function StateStore(parentPath, namespace, options) {
 
     switch(scopes[state.scope]) {
         case scopes.full:
-            this.db = db
+            this.storage = storage
             this.getStore = createStore
             break
         case scopes.delegate:
@@ -142,8 +122,14 @@ function validateModuleState() {
  * 
  * @param {string} rootPath Filesystem directory under which the stores should be created.
  * @param {object} options Reserved for future use, does not do anything at this point.
+ * @returns Top-level store for this system. This object must be captured and stored to work with the StateStore API. 
+ * @throws A general exception if called more than once.
  */
-module.exports.setup = async (rootPath, options) => {
+module.exports = async (rootPath, options) => {
+
+    if (moduleState.initialized) {
+        throw 'Call to .setup rejected: morrigan.utils.statestore has alraedy been initialized!'
+    }
 
     moduleState.LocalStorage = require('node-localstorage').LocalStorage
 
@@ -153,20 +139,24 @@ module.exports.setup = async (rootPath, options) => {
 
     moduleState.initialized = true
 
-    rootStore = new StateStore(moduleState.rootPath, 'global', { scope: module.exports.SCOPE_FULL })
-
-    return rootStore
+    return new StateStore(moduleState.rootPath, 'global', { scope: module.exports.SCOPE_FULL })
 }
+
 
 /**
- * Returns the root store object if one exists, otherwise returns null.
- * 
- * @returns The root store, if the setup method has been called. Otherwise returns null.
+ * Regular expression for valid namespace format.
  */
-module.exports.getRootStore = async () => {
-    return rootStore
-}
+ module.exports.VALID_NAMESPACE_FORMAT = namespaceFormat
 
-module.exports.getStore = async (namespace, scope) => {
-    return await rootStore.getStore(namespace, scope)
-}
+ /**
+  * Simple scope, only allows getting, setting and removing of data in this store.
+  */
+ module.exports.SCOPE_SIMPLE     = 'simple'
+ /**
+  * Delegate scope, allows creation of new stores, in addition to what 'limited' scope allows.
+  */
+ module.exports.SCOPE_DELEGATE   = 'delegate'
+ /**
+  * Full scope, allows full access to the underlying LocalStorage object in addition to 'delegate' scope.
+  */
+ module.exports.SCOPE_FULL       = 'full'

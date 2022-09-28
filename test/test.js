@@ -3,7 +3,7 @@ const assert = require('assert')
 
 
 function determineScope(store) {
-    if (store.db) { return 'full' }
+    if (store.storage) { return 'full' }
     if (store.getStore) {return 'delegate'}
     return 'simple'
 }
@@ -17,16 +17,8 @@ describe('StateStore', () => {
         describe('setup', () => {
 
             it("Should return a 'root' store when setup finishes.", async () => {
-                rootStore = await StateStore.setup('C:\\morrigan.server\\test\\state\\')
+                rootStore = await StateStore('/morrigan.server/test/state')
                 assert.deepEqual(rootStore.getNamespace(), 'global')
-            })
-        })
-
-        describe('getRootStore', () => {
-
-            it("Should return the same store instance as 'setup'.", async () => {
-                let store = await StateStore.getRootStore()
-                assert.deepEqual(store, rootStore)
             })
         })
     })
@@ -37,7 +29,8 @@ describe('StateStore', () => {
         const testValue = Math.random().toString(16).split('.')[1]
 
         before(async () => {
-            store = await StateStore.getStore('storeTest', 'full')
+            console.log(rootStore)
+            store = await rootStore.getStore('storeTest', 'full')
         })
 
         it("Should allow asynchronous storage of data using the 'set' method.", async () => {
@@ -138,8 +131,8 @@ describe('StateStore', () => {
                     let v2 = await store2.get('value')
 
                     assert.equal(store1.getNamespace(), store2.getNamespace())
-                    if (store1.db !== store2.db) {
-                        assert.fail('Both test storess use the same db instance!')
+                    if (store1.storage !== store2.storage) {
+                        assert.fail('Both test storess use the same storage instance!')
                     }
 
                     assert.deepEqual(v1, v2)
@@ -153,8 +146,8 @@ describe('StateStore', () => {
                     await store1.set('privateValue', v1)
                     let v2 = await store2.get('privateValue')
 
-                    if (store1.db === store2.db) {
-                        assert.fail('Both test storess use the same db instance!')
+                    if (store1.storage === store2.storage) {
+                        assert.fail('Both test storess use the same storage instance!')
                     }
                     assert.notDeepEqual(v1, v2)
 
@@ -168,8 +161,8 @@ describe('StateStore', () => {
                     await store1.set('privateValue', v1)
                     let v2 = await store2.get('privateValue')
 
-                    if (store1.db === store2.db) {
-                        assert.fail('Both test storess use the same db instance!')
+                    if (store1.storage === store2.storage) {
+                        assert.fail('Both test storess use the same storage instance!')
                     }
                     assert.notDeepEqual(v1, v2)
 
@@ -183,8 +176,8 @@ describe('StateStore', () => {
                     await store2.set('privateValue', v1)
                     let v2 = await store1.get('privateValue')
 
-                    if (store1.db === store2.db) {
-                        assert.fail('Both test storess use the same db instance!')
+                    if (store1.storage === store2.storage) {
+                        assert.fail('Both test storess use the same storage instance!')
                     }
                     assert.notDeepEqual(v1, v2)
 
@@ -206,7 +199,7 @@ describe('StateStore', () => {
                     var store = null
 
                     before(async () => {
-                        store = await StateStore.getStore('datatypeTests')
+                        store = await rootStore.getStore('datatypeTests')
                     })
 
                     it('Number', async () => {
